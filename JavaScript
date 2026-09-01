@@ -1,0 +1,187 @@
+// Built-in African dishes database to ensure local favorites always load perfectly
+const localAfricanRecipes = {
+    "jollof": {
+        title: "Classic West African Jollof Rice",
+        image: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600&auto=format&fit=crop&q=60",
+        description: "A rich, smoky, and flavorful one-pot spiced rice dish.",
+        utensils: ["Blender", "Large saucepan with lid", "Wooden spoon", "Cutting board"],
+        ingredients: [
+            "2 cups parboiled long grain rice",
+            "4 fresh tomatoes & 1 red bell pepper",
+            "1 onion & 2 cloves garlic",
+            "3 tablespoons tomato paste",
+            "2 cups chicken stock & cooking oil"
+        ],
+        steps: [
+            { text: "Blend tomatoes, bell pepper, onion, and garlic until smooth.", img: "https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=200&auto=format&fit=crop&q=60" },
+            { text: "Heat oil in a large saucepan and fry the tomato paste for 5 minutes.", img: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=200&auto=format&fit=crop&q=60" },
+            { text: "Pour in the blended mixture and cook until reduced.", img: "https://images.unsplash.com/photo-1547592180-85f173990554?w=200&auto=format&fit=crop&q=60" },
+            { text: "Add chicken stock, spices, and washed rice; stir well.", img: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=200&auto=format&fit=crop&q=60" },
+            { text: "Cover tightly, reduce heat, and let simmer until tender.", img: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&auto=format&fit=crop&q=60" }
+        ]
+    },
+    "banku": {
+        title: "Traditional Ghanaian Banku",
+        image: "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=600&auto=format&fit=crop&q=60",
+        description: "A smooth, fermented corn and cassava dough meal served with hot pepper and fish.",
+        utensils: ["Sturdy cooking pot", "Wooden banku paddle (Banku taa)", "Measuring bowls"],
+        ingredients: [
+            "2 cups fermented corn dough",
+            "1 cup cassava dough",
+            "Water",
+            "Pinch of salt"
+        ],
+        steps: [
+            { text: "Mix the corn dough and cassava dough together in a pot with water until smooth.", img: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=200&auto=format&fit=crop&q=60" },
+            { text: "Place over medium heat, stirring continuously to prevent lumps from forming.", img: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=200&auto=format&fit=crop&q=60" },
+            { text: "Once it thickens, cover and let steam on low heat for a few minutes.", img: "https://images.unsplash.com/photo-1547592180-85f173990554?w=200&auto=format&fit=crop&q=60" },
+            { text: "Vigorously mold and turn the mixture with your paddle until smooth and glossy.", img: "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=200&auto=format&fit=crop&q=60" }
+        ]
+    },
+    "fufu": {
+        title: "Smooth Cassava and Plantain Fufu",
+        image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=60",
+        description: "A classic pounded consistency dish served with light soup or peanut soup.",
+        utensils: ["Large mortar and pestle", "Cooking pot", "Spatula"],
+        ingredients: [
+            "Fresh cassava tubers",
+            "Unripe green plantains",
+            "Water"
+        ],
+        steps: [
+            { text: "Peel, wash, and cut the cassava and plantains into chunk pieces.", img: "https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=200&auto=format&fit=crop&q=60" },
+            { text: "Boil the chunks in a pot of water until soft and tender.", img: "https://images.unsplash.com/photo-1547592180-85f173990554?w=200&auto=format&fit=crop&q=60" },
+            { text: "Transfer the cooked pieces into a mortar and pound rhythmically with a pestle.", img: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=200&auto=format&fit=crop&q=60" },
+            { text: "Add small amounts of water as needed while turning until smooth and stretchy.", img: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&auto=format&fit=crop&q=60" }
+        ]
+    }
+};
+
+// Main Search Function handling local database + online public API options
+async function searchRecipe() {
+    const query = document.getElementById("search-input").value.trim().toLowerCase();
+    const optionsContainer = document.getElementById("options-container");
+    optionsContainer.innerHTML = ""; // Clear old option buttons
+
+    if (!query) {
+        alert("Please enter a dish name to search!");
+        return;
+    }
+
+    // 1. Check if it matches our local African recipe database first
+    if (localAfricanRecipes[query]) {
+        displayRecipeDetails(localAfricanRecipes[query]);
+        return;
+    }
+
+    // Check partial matches in local database (e.g. typing "banku" or "jollof")
+    for (let key in localAfricanRecipes) {
+        if (key.includes(query) || query.includes(key)) {
+            displayRecipeDetails(localAfricanRecipes[key]);
+            return;
+        }
+    }
+
+    // 2. Otherwise, look up options from TheMealDB online API
+    const apiUrl = `https://www.themealdb.com/api/json/v1/1/search.php?s=${query}`;
+
+    try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+
+        if (data.meals && data.meals.length > 0) {
+            // If there are multiple matches (e.g. typing "rice"), create option buttons for user to choose
+            if (data.meals.length > 1) {
+                document.getElementById("recipe-title").innerText = "Multiple Options Found";
+                document.getElementById("recipe-desc").innerText = "We found multiple dishes matching your search. Click one below:";
+                
+                data.meals.forEach(meal => {
+                    const btn = document.createElement("button");
+                    btn.className = "option-btn";
+                    btn.innerText = meal.strMeal;
+                    btn.onclick = () => {
+                        formatAndDisplayApiMeal(meal);
+                        optionsContainer.innerHTML = ""; // Clear buttons after selection
+                    };
+                    optionsContainer.appendChild(btn);
+                });
+            } else {
+                formatAndDisplayApiMeal(data.meals[0]);
+            }
+        } else {
+            document.getElementById("recipe-title").innerText = "Recipe Not Found";
+            document.getElementById("recipe-desc").innerText = `We couldn't find "${query}". Try searching for jollof, banku, fufu, or chicken!`;
+            document.getElementById("recipe-image").src = "https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=600&auto=format&fit=crop&q=60";
+            document.getElementById("ingredients-list").innerHTML = "<li>None</li>";
+            document.getElementById("steps-container").innerHTML = "<p><em>No steps available.</em></p>";
+        }
+    } catch (error) {
+        console.error("Error fetching recipe:", error);
+        alert("Failed to connect to the recipe database. Please check your internet connection.");
+    }
+}
+
+// Display custom structured local/selected recipe details
+function displayRecipeDetails(recipe) {
+    document.getElementById("recipe-title").innerText = recipe.title;
+    document.getElementById("recipe-desc").innerText = recipe.description;
+    document.getElementById("recipe-image").src = recipe.image;
+
+    // Utensils
+    const utensilsList = document.getElementById("utensils-list");
+    utensilsList.innerHTML = "";
+    recipe.utensils.forEach(u => {
+        const li = document.createElement("li");
+        li.innerText = u;
+        utensilsList.appendChild(li);
+    });
+
+    // Ingredients
+    const ingredientsList = document.getElementById("ingredients-list");
+    ingredientsList.innerHTML = "";
+    recipe.ingredients.forEach(i => {
+        const li = document.createElement("li");
+        li.innerText = i;
+        ingredientsList.appendChild(li);
+    });
+
+    // Steps with visual images
+    const stepsContainer = document.getElementById("steps-container");
+    stepsContainer.innerHTML = "";
+    recipe.steps.forEach(stepObj => {
+        const div = document.createElement("div");
+        div.className = "step-card";
+        div.innerHTML = `
+            <img src="${stepObj.img}" alt="Step image" class="step-img">
+            <p>${stepObj.text}</p>
+        `;
+        stepsContainer.appendChild(div);
+    });
+}
+
+// Helper to format API results into step images
+function formatAndDisplayApiMeal(meal) {
+    const ingredients = [];
+    for (let i = 1; i <= 20; i++) {
+        const ing = meal[`strIngredient${i}`];
+        const measure = meal[`strMeasure${i}`];
+        if (ing && ing.trim() !== "") {
+            ingredients.push(`${measure ? measure : ""} ${ing}`.trim());
+        }
+    }
+
+    const rawSteps = meal.strInstructions.split(/\r?\n/).filter(s => s.trim() !== "");
+    const steps = rawSteps.map(text => ({
+        text: text,
+        img: meal.strMealThumb // Fallback step picture representation
+    }));
+
+    displayRecipeDetails({
+        title: meal.strMeal,
+        image: meal.strMealThumb,
+        description: `Category: ${meal.strCategory} | Origin: ${meal.strArea}`,
+        utensils: ["Standard kitchen knives", "Cutting board", "Cooking pans"],
+        ingredients: ingredients,
+        steps: steps
+    });
+}
